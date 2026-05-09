@@ -1,0 +1,95 @@
+#include <TFT_eSPI.h>
+
+TFT_eSPI tft = TFT_eSPI();
+
+// Colores
+#define LION_BODY 0xFD20
+#define LION_MANE 0xF920
+#define LION_BLACK TFT_BLACK
+#define LION_WHITE TFT_WHITE
+
+int centerX, centerY;
+int frame = 0;
+
+void drawLion(bool blink, int tailOffset);
+
+void setup() {
+  Serial.begin(115200);
+
+  tft.init();
+  tft.setRotation(3);
+
+  centerX = tft.width() / 2;
+  centerY = tft.height() / 2;
+}
+
+void loop() {
+  // Animación
+  bool blink = (frame % 20 == 0);         // parpadea cada cierto tiempo
+  int tailOffset = sin(frame * 0.2) * 10; // movimiento cola
+
+  drawLion(blink, tailOffset);
+
+  frame++;
+  delay(80);
+}
+
+void drawLion(bool blink, int tailOffset) {
+  tft.fillScreen(TFT_SKYBLUE);
+
+  // MELENA
+  tft.fillCircle(centerX, centerY, 60, LION_MANE);
+
+  // CARA
+  tft.fillCircle(centerX, centerY, 40, LION_BODY);
+
+  // OREJAS
+  tft.fillCircle(centerX - 30, centerY - 35, 15, LION_BODY);
+  tft.fillCircle(centerX + 30, centerY - 35, 15, LION_BODY);
+
+  // OJOS
+  if (blink) {
+    // ojos cerrados
+    tft.drawLine(centerX - 20, centerY - 10, centerX - 10, centerY - 10, LION_BLACK);
+    tft.drawLine(centerX + 10, centerY - 10, centerX + 20, centerY - 10, LION_BLACK);
+  } else {
+    tft.fillCircle(centerX - 15, centerY - 10, 6, LION_WHITE);
+    tft.fillCircle(centerX + 15, centerY - 10, 6, LION_WHITE);
+
+    tft.fillCircle(centerX - 15, centerY - 10, 3, LION_BLACK);
+    tft.fillCircle(centerX + 15, centerY - 10, 3, LION_BLACK);
+  }
+
+  // NARIZ
+  tft.fillTriangle(centerX - 5, centerY + 5,
+                   centerX + 5, centerY + 5,
+                   centerX, centerY + 15,
+                   LION_BLACK);
+
+  // BOCA
+  tft.drawLine(centerX, centerY + 15, centerX, centerY + 25, LION_BLACK);
+  tft.drawLine(centerX, centerY + 25, centerX - 10, centerY + 30, LION_BLACK);
+  tft.drawLine(centerX, centerY + 25, centerX + 10, centerY + 30, LION_BLACK);
+
+  // CUERPO
+  tft.fillEllipse(centerX, centerY + 70, 50, 30, LION_BODY);
+
+  // PATAS
+  tft.fillRoundRect(centerX - 25, centerY + 90, 15, 35, 5, LION_BODY);
+  tft.fillRoundRect(centerX + 10, centerY + 90, 15, 35, 5, LION_BODY);
+
+  // PIES
+  tft.fillCircle(centerX - 18, centerY + 130, 8, LION_MANE);
+  tft.fillCircle(centerX + 18, centerY + 130, 8, LION_MANE);
+
+  // COLA ANIMADA
+  for (int i = 0; i < 20; i++) {
+    float angle = i * 0.2;
+    int x = centerX + 50 + i * 2;
+    int y = centerY + 50 + 5 * sin(angle + tailOffset * 0.1);
+    tft.fillCircle(x, y, 4, LION_BODY);
+  }
+
+  // punta cola
+  tft.fillCircle(centerX + 90, centerY + 50 + tailOffset, 6, LION_MANE);
+}
