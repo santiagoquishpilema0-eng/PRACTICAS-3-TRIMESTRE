@@ -1,0 +1,95 @@
+#include <SPI.h>
+#include <TFT_eSPI.h>
+#include <XPT2046_Touchscreen.h>
+
+// ===== TFT =====
+TFT_eSPI tft = TFT_eSPI();
+
+// ===== TOUCH =====
+#define XPT2046_IRQ 36
+#define XPT2046_MOSI 32
+#define XPT2046_MISO 39
+#define XPT2046_CLK 25
+#define XPT2046_CS 33
+
+SPIClass touchscreenSPI = SPIClass(VSPI);
+XPT2046_Touchscreen touchscreen(XPT2046_CS, XPT2046_IRQ);
+
+// Pantalla
+#define SCREEN_WIDTH 320
+#define SCREEN_HEIGHT 240
+
+int x, y, z;
+
+void drawCat(int cx, int cy) {
+
+  // Cara
+  tft.fillCircle(cx, cy, 20, TFT_YELLOW);
+
+  // Orejas
+  tft.fillTriangle(cx - 15, cy - 10, cx - 5, cy - 30, cx + 0, cy - 10, TFT_YELLOW);
+  tft.fillTriangle(cx + 15, cy - 10, cx + 5, cy - 30, cx - 0, cy - 10, TFT_YELLOW);
+
+  // Ojos
+  tft.fillCircle(cx - 7, cy - 5, 3, TFT_BLACK);
+  tft.fillCircle(cx + 7, cy - 5, 3, TFT_BLACK);
+
+  // Nariz
+  tft.fillTriangle(cx, cy + 2, cx - 3, cy + 7, cx + 3, cy + 7, TFT_RED);
+
+  // Boca
+  tft.drawLine(cx, cy + 7, cx - 5, cy + 12, TFT_BLACK);
+  tft.drawLine(cx, cy + 7, cx + 5, cy + 12, TFT_BLACK);
+
+  // Bigotes
+  tft.drawLine(cx - 10, cy + 3, cx - 20, cy, TFT_BLACK);
+  tft.drawLine(cx - 10, cy + 8, cx - 20, cy + 10, TFT_BLACK);
+
+  tft.drawLine(cx + 10, cy + 3, cx + 20, cy, TFT_BLACK);
+  tft.drawLine(cx + 10, cy + 8, cx + 20, cy + 10, TFT_BLACK);
+}
+
+void setup() {
+
+  Serial.begin(115200);
+
+  // TFT
+  tft.init();
+  tft.setRotation(1);
+  tft.fillScreen(TFT_WHITE);
+
+  // Marco
+  tft.drawRect(5, 5, 310, 230, TFT_RED);
+
+  // Texto
+  tft.setTextColor(TFT_RED, TFT_WHITE);
+  tft.drawCentreString("TOUCH GATITO", 160, 10, 2);
+
+  // TOUCH
+  touchscreenSPI.begin(XPT2046_CLK, XPT2046_MISO, XPT2046_MOSI, XPT2046_CS);
+  touchscreen.begin(touchscreenSPI);
+  touchscreen.setRotation(1);
+}
+
+void loop() {
+
+  if (touchscreen.tirqTouched() && touchscreen.touched()) {
+
+    TS_Point p = touchscreen.getPoint();
+
+    x = map(p.x, 200, 3700, 1, SCREEN_WIDTH);
+    y = map(p.y, 240, 3800, 1, SCREEN_HEIGHT);
+
+    // Mostrar coordenadas
+    Serial.print("X: ");
+    Serial.print(x);
+
+    Serial.print(" Y: ");
+    Serial.println(y);
+
+    // Dibujar gatito donde toques
+    drawCat(x, y);
+
+    delay(80);
+  }
+}
