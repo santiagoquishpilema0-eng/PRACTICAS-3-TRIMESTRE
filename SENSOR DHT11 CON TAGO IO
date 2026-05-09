@@ -1,0 +1,77 @@
+import network
+import urequests
+import time
+import dht
+from machine import Pin
+
+# CONFIGURACIÓN WIFI
+ssid = "RED MECATRONICA"
+password = "MECA2026@."
+
+# CONFIGURACIÓN TAGO
+url = "https://api.tago.io/data"
+headers = {
+    "Content-Type": "application/json",
+    "Device-Token": "c59bdf0e-30f2-4b0a-b931-9c3fd843229b"
+}
+
+# CONECTAR WIFI
+wifi = network.WLAN(network.STA_IF)
+wifi.active(True)
+wifi.connect(ssid, password)
+
+print("Conectando a WiFi...")
+while not wifi.isconnected():
+    time.sleep(1)
+    print("...")
+
+print("Conectado!")
+print("IP:", wifi.ifconfig())
+
+# SENSOR DHT11
+sensor = dht.DHT11(Pin(5))
+
+# FUNCIÓN PARA ENVIAR DATOS
+def enviar(variable, valor, unidad):
+    data = {
+        "variable": variable,
+        "value": valor,
+        "unit": unidad
+    }
+
+    try:
+        response = urequests.post(url, json=data, headers=headers)
+        print("Enviado:", variable, "| Status:", response.status_code)
+        response.close()
+    except Exception as e:
+        print("Error:", e)
+
+
+# LOOP PRINCIPAL
+while True:
+    try:
+        sensor.measure()
+        
+        temperatura = sensor.temperature()
+        humedad = sensor.humidity()
+
+        # Heat index (aproximado en °C)
+        hic = temperatura + 0.33 * humedad - 0.7
+
+        print("Temp:", temperatura, "°C")
+        print("Hum:", humedad, "%")
+        print("Heat Index:", hic)
+
+        # ENVIAR DATOS
+        enviar("Temperature", temperatura, "C")
+        time.sleep(5)
+
+        enviar("Humidity", humedad, "%")
+        time.sleep(5)
+
+        enviar("HIndex", hic, "C")
+        time.sleep(30)
+
+    except Exception as e:
+        print("Error leyendo sensor:", e)
+        time.sleep(2)
